@@ -212,7 +212,7 @@ function cand_table(cand) {
     var key1 = candidats[i][0];
     text2 += '<td onclick="clearMyTimeout(); cand_table(\''+key1+'\')">'+cand_img_tag(key1)+"</td>";
   }
-  text += "<tr><td>  </td>" + text2 + "<td> x̄ </td></tr>\n";
+  text += "<tr><td>  </td>" + text2 + "<td title=\"moyenne\"> x̄ </td></tr>\n";
   for (var i = 0; i < candidats.length; i++) {
     var key1 = candidats[i][0];
     var text2 = "";

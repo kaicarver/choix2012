@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Choix 2012</title>
+<style type="text/css">
+body { font-family: Arial; font-size: 14px; }
+.adesc, .qdesc { display: none; position: fixed; top: 1em; right: 1%; width: 36%; font-family: Arial; background-color: white; }
+.qtheme { font-style: italic; }
+#clist { position: fixed; top: 1em; right: 38%; width: 8%; background-color: white; }
+#questions { width: 50%; background-color: white; }
+.theme { padding: 0.3em; padding-top: 0.4em; background-color: white; }
+.question { padding: 0.2em; padding-left: 0.5em; background-color: #EBECE4; }
+img { width: 60%; }
+td img { width: 2em; cursor:pointer; }
+label, input { font-size: 0.8em; }
+#ctable { position: fixed; bottom: 1em; right: 1%; width: 36%; background-color: white; text-align: center; background-color: white; }
+table { float: right; background-color: white; }
+td { width: 2em; height: 2em; }
+.sim10 { background-color:#FF0000 }
+.sim9  { background-color:#FF1900 }
+.sim8  { background-color:#FF3300 }
+.sim7  { background-color:#FF4C00 }
+.sim6  { background-color:#FF6600 }
+.sim5  { background-color:#FF7F00 }
+.sim4  { background-color:#FF9900 }
+.sim3  { background-color:#FFB200 }
+.sim2  { background-color:#FFCC00 }
+.sim1  { background-color:#FFE500 }
+.avg10 { background-color:#000000 }
+.avg9  { background-color:#191919 }
+.avg8  { background-color:#333333 }
+.avg7  { background-color:#4C4C4C }
+.avg6  { background-color:#666666 }
+.avg5  { background-color:#7F7F7F }
+.avg4  { background-color:#999999 }
+.avg3  { background-color:#B2B2B2 }
+.avg2  { background-color:#CCCCCC }
+.avg1  { background-color:#E5E5E5 }
+</style>
+<script type="text/javascript" src="choix2012.js"></script>
+<script type="text/javascript">
+var cur_cand = 0;
+var candidats_abbrev = {
+  "nicolas-sarkozy" : { name : "Nicolas Sarkozy", initials : "NS" },
+  "francois-bayrou" : { name : "Francois Bayrou", initials : "FB" },
+  "marine-le-pen" : { name : "Marine Le Pen", initials : "ML" },
+  "nicolas-dupont-aignan" : { name : "Nicolas Dupont-Aignan", initials : "ND" },
+  "jacques-cheminade" : { name : "Jacques Cheminade", initials : "JC" },
+  "francois-hollande" : { name : "Francois Hollande", initials : "FH" },
+  "jean-luc-melenchon" : { name : "Jean-Luc M\u00e9lenchon", initials : "JM" },
+  "eva-joly" : { name : "Eva Joly", initials : "EJ" },
+  "philippe-poutou" : { name : "Philippe Poutou", initials : "PP" },
+  "nathalie-arthaud" : { name : "Nathalie Arthaud", initials : "NA" }
+};
+var candidats_array = [];
+var choix_num = {
+  "Pour" : 2,
+  "Contre" : 0,
+  "Interm\u00e9diaire" : 1,
+  "Vide" : "X"
+}
+var questions = [];
+var diffs = {};
+var html_buffer = "";
+function dowrite(html) {
+  //document.write(html);
+  //document.getElementById("content").innerHTML += html;
+  html_buffer += html;
+}
+function dowrite_flush() {
+  document.getElementById("content").innerHTML += html_buffer;
+  html_buffer = "";
+}
+var lastshown;
+function showhide(id) {
+  var e = document.getElementById(id);
+  if (lastshown) lastshown.style.display = 'none';
+  e.style.display = 'block';
+  lastshown = e;
+  return;
+  if (e.style.display != 'block')
+    e.style.display='block'
+  else
+    e.style.display='none'
+}
+function setquestion(idx) {
+  cur_qidx=idx;
+  showhide('qdesc'+idx);
+}
+function fig_video(id) {
+  if (id) {
+    return '<div class="figplayer loaded" data-videoid="'+id+'" data-width="313" data-height="178"><div class="inner"><div style="display:none"></div><object type="application/x-shockwave-flash" data="http://c.brightcove.com/services/viewer/federated_f9?&amp;width=313&amp;height=178&amp;flashID=myExperience-'+id+'&amp;bgcolor=%23000000&amp;playerID=694908207001&amp;playerKey=AQ~~%2CAAAAjgltpmk~%2C3G6d8W41NOS8dBzRXeWHGdzbg-FWShEX&amp;isVid=true&amp;isUI=true&amp;dynamicStreaming=true&amp;%40videoPlayer='+id+'&amp;templateLoadHandler=LEFIG.Brightcove.onTemplateLoaded&amp;wmode=opaque&amp;autoStart=&amp;debuggerID=&amp;showNoContentMessage=&amp;startTime=1336205135595" id="myExperience-'+id+'" width="313" height="178" class="BrightcoveExperience" seamlesstabbing="false" style="display: block !important; "><param name="allowScriptAccess" value="always"><param name="allowFullScreen" value="true"><param name="seamlessTabbing" value="false"><param name="swliveconnect" value="true"><param name="wmode" value="opaque"><param name="quality" value="high"><param name="bgcolor" value="#000000"></object></div></div>';
+  } else return "";
+}
+function fig_url(url) {
+  if (url) {
+    return '<div><a href="'+url+'">En savoir plus</a></div>';  
+  } else return "";
+}
+function radioclick(b) {
+  calculate();
+  b.parentNode.parentNode.parentNode.style.backgroundColor="white";
+}
+function store_question(q, key) {
+   q.theme.titre = key;
+   questions.push(q);
+}
+function capitalize(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+var cur_theme = "";
+var cur_qidx = 0;
+function write_question(q, idx) {
+   var r = "";
+   var qtitre = capitalize(q.question.titre.replace(/ ?Faut-il /,""));
+   for (var i = 0; i < q.regroupement.length; i++) {
+     var p = q.regroupement[i];
+     var nidx = idx+"_"+i;
+     //r += "<tt><span onmouseover=\"showhide('adesc"+nidx+"')\">" + candidats_abbrev[p.nom_likemeter].initials + " " + choix_num[p.position] + "</span></tt> ";
+     r += "<div class=\"adesc\" id=\"adesc"+nidx+"\">" + "<span class=\"qtheme\">"+ q.theme.titre +"</span>: <span>" + qtitre + "</span><p>" + candidats_abbrev[p.nom_likemeter].name + " : " + p.position + "</p>" + p.texte + " " + p.date_prise_position + " <a href=\"" + p.lien_source + "\">" + p.source + "</a>" + "</div>";
+     if (!candidats_abbrev[p.nom_likemeter].choices) {
+       candidats_abbrev[p.nom_likemeter].choices = [];
+       candidats_abbrev[p.nom_likemeter].idx = i;
+       diffs[p.nom_likemeter] = 0;
+     }
+     candidats_abbrev[p.nom_likemeter].choices[idx] = choix_num[p.position];
+   }
+   var rname = "choix"+idx;
+   if (cur_theme != q.theme.titre) {
+     dowrite("<div class=\"theme\">" + "<span class=\"qtheme\">"+ q.theme.titre +":</span></div>");
+     cur_theme = q.theme.titre;
+   }
+   dowrite("<div class=\"question\">" + (idx+1) + ". " + "<span onmouseover=\"setquestion("+idx+")\"><span>" + qtitre + "</span> ");
+   dowrite("<label><input name=\""+rname+"\" type=\"radio\" value=\"2\" onclick=\"radioclick(this)\"/>Oui</label> ");
+   dowrite("<label><input name=\""+rname+"\" type=\"radio\" value=\"1\" onclick=\"radioclick(this)\"/>Hmm</label> ");
+   dowrite("<label><input name=\""+rname+"\" type=\"radio\" value=\"0\" onclick=\"radioclick(this)\"/>Non</label> ");
+   dowrite("<label><input name=\""+rname+"\" type=\"radio\" value=\"X\" onclick=\"radioclick(this)\" checked=\"checked\"/> ? </label>");
+   dowrite("</span><div class=\"qdesc\" id=\"qdesc"+idx+"\">" + "<span class=\"qtheme\">"+ q.theme.titre +"</span>: <span>" + qtitre + "</span><br/><br/>" + " " + q.question.decryptage_figaro + fig_url(q.question.lien_decryptage_figaro) + " " + fig_video(q.question.id_video_decryptage_figaro) + "</div></div>\n");
+   dowrite(r);
+}
+function cand_img_url(name) {
+  return(''+name+'.jpg');
+}
+function cand_img_tag(key) {
+  return('<img src="' + cand_img_url(key) + '" alt="' + candidats_abbrev[key].name + '" title="' + candidats_abbrev[key].name + '">');
+}
+function display_cands(diffs) {
+  var d = document.getElementById("clist");
+  var sorted = [];
+  var html = "";
+  for (var cand in diffs) { sorted.push([cand, diffs[cand]]); }
+  sorted.sort(function(a, b) {return b[1] - a[1]})
+  for (var i = 0; i < sorted.length; i++) {
+    html += '<img src="' + cand_img_url(sorted[i][0]) + '" title="'+ candidats_abbrev[sorted[i][0]].name + " : " + sorted[i][1]+'%" onmouseover="showhide(\'adesc\'+cur_qidx+\'_'+candidats_abbrev[sorted[i][0]].idx+'\')"/>';
+  }
+  d.innerHTML = html;
+}
+function similarity(ch1, choices1, ch2, choices2) {
+  var diff = 0;
+  var num_comparisons = 0;
+  for (var i=0; i < choices1.length; i++) {
+    if (choices1[i] != 'X' && choices2[i] != 'X') {
+      diff += Math.abs(choices1[i] - choices2[i]);
+      num_comparisons++;
+    }
+  }
+  var avg_diff = 0;
+  var similarity = 0;
+  if (num_comparisons > 0) {
+    var avg_diff = diff / num_comparisons;
+    diff += (choices1.length - num_comparisons) * avg_diff; // normalize out cases when no choices were made
+    similarity = Math.round((1 - diff / (choices1.length * 2)) * 100);
+  }
+  return similarity;
+}
+function calculate() {
+  var radios = document.getElementsByTagName('input');
+  var values = "";
+  var count = 0;
+  var mychoices = [];
+  for (var i = 0; i < radios.length; i++) {
+    if (radios[i].type === 'radio' && radios[i].checked) {
+      values += radios[i].name + "=" + radios[i].value + " ";
+      mychoices[count] = radios[i].value;
+      count++;
+    }
+  }
+  values = values.replace(/choix/g,"");
+  for (var key in candidats_abbrev) {
+    diffs[key] = similarity("me", mychoices, candidats_abbrev[key].initials, candidats_abbrev[key].choices);
+  }  
+  display_cands(diffs);
+}
+function cand_table(cand) {
+  var text = "<table><caption><small>Proximité selon réponses aux questions.<br/>Cliquer sur un candidat pour le mettre en 1ère position du tableau.</small></caption>\n";
+  var text2 = "";
+  var key1 = cand;
+  var candidats = [];
+  for (var key2 in candidats_abbrev) {
+    var s = similarity(candidats_abbrev[key1].initials, candidats_abbrev[key1].choices,
+                       candidats_abbrev[key2].initials, candidats_abbrev[key2].choices);
+    candidats.push([key2, s]);
+  }
+  candidats.sort(function(a, b) {return b[1] - a[1]})
+  var candidatsm = [];
+  for (var i = 0; i < candidats.length; i++) {
+    if (i%2) candidatsm.push(candidats[i]); else  candidatsm.unshift(candidats[i]);
+  }
+  //candidats = candidatsm;
+  for (var i = 0; i < candidats.length; i++) {
+    var key1 = candidats[i][0];
+    text2 += '<td onclick="clearMyTimeout(); cand_table(\''+key1+'\')">'+cand_img_tag(key1)+"</td>";
+  }
+  text += "<tr><td>  </td>" + text2 + "<td> x̄ </td></tr>\n";
+  for (var i = 0; i < candidats.length; i++) {
+    var key1 = candidats[i][0];
+    var text2 = "";
+    var avg_sim = 0;
+    var num = 0;
+    for (var j = 0; j < candidats.length; j++) {
+      var key2 = candidats[j][0];
+      var s = similarity(candidats_abbrev[key1].initials, candidats_abbrev[key1].choices,
+                         candidats_abbrev[key2].initials, candidats_abbrev[key2].choices);
+      avg_sim += s; num++;
+      text2 += "<td class=\"sim"+(Math.ceil(s/10))+"\">" + s + "</td>";
+    }
+    avg_sim = Math.round(avg_sim / num);
+    text2 += "<td class=\"avg"+(Math.ceil((avg_sim-35)*1.5/10))+"\">" + avg_sim + "</td>";
+    text += "<tr>" + '<td onclick="clearMyTimeout(); cand_table(\''+key1+'\')">'+cand_img_tag(key1)+"</td>" + text2 + "</tr>\n";
+  }
+  text += "</table>";
+  var d = document.getElementById("ctable");
+  d.innerHTML = text;
+}
+function doit() {
+  // TODO: handle params specifying choices file:///home/kai/choix2012.html?1=1&2=0&3=X and add me to the comparison table
+  // TODO: make work on iPad, rely less on hover, make hover less annoying
+  //ps = document.location.search.slice(1).split('&'); ch = []; for (x in ps) { ch[ps[x].split('=')[0]] = ps[x].split('=')[1] } ch
+  dowrite('<div id="questions">');
+  for (var key in $lst) {
+    if ($lst[key][1]) {
+      if ($lst[key].length) {
+        for (var i = 0; i < $lst[key].length; i++) {
+          store_question($lst[key][i], key);
+        }
+      } else {
+        store_question($lst[key][1], key);
+      }
+    } else {
+      store_question($lst[key][0], key);
+    }
+  }
+  for (var i = 0; i < questions.length; i++) {
+    write_question(questions[i], i);
+  }
+  dowrite('</div>');
+  dowrite('<div id="clist"></div>');
+  dowrite('<div id="ctable"></div>');
+  dowrite_flush();
+  display_cands(diffs);
+  var i = 0;
+  for (var key in candidats_abbrev) {
+    candidats_array[i++] = key;
+  }  
+  cand_table('nicolas-sarkozy');
+  myTimeout();
+}
+var timerid = 0;
+function doStuff() {
+  cand_table(candidats_array[cur_cand]);
+  cur_cand = (cur_cand + 1) % candidats_array.length;
+}
+function myTimeout() {
+    doStuff();
+    timerid = setTimeout(myTimeout, 5000);
+}
+function clearMyTimeout() {
+    clearTimeout(timerid);
+}
+</script>
+</head>
+<body onload="doit()">
+<p>Repondez aux 24 questions du <a href="http://elections.lefigaro.fr/comparateur-programmes/">comparateur du Figaro</a> et trouvez le candidat le plus proche de vous:</p>
+<div id="content"></div>
+<p>Données du <a href="http://elections.lefigaro.fr/comparateur-programmes/">Figaro</a>, interface de <a href="mailto:kaicarver@gmail.com">Kai Carver</a></p>
+</body>
+</html>
